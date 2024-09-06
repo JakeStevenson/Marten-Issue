@@ -9,6 +9,7 @@ using Wolverine.Attributes;
 using Wolverine.Tracking;
 using Wolverine.Marten;
 using Microsoft.Extensions.Logging;
+using Xunit.Abstractions;
 
 namespace EndToEnd
 {
@@ -39,7 +40,12 @@ namespace EndToEnd
     //Commands and Queries
     public record CreateOrderCommand
     {
-        public Guid OrderId { get; init; } = Guid.NewGuid();
+        public CreateOrderCommand(Guid orderId, ITestOutputHelper logger)
+        {
+            logger.WriteLine($"Created order command {orderId}");
+            OrderId = orderId;
+        }
+        public Guid OrderId { get; init; }
     }
 
     public record UpdateOrderValue
@@ -61,9 +67,6 @@ namespace EndToEnd
         {
             logger.Log(LogLevel.Information, $"Creating for {command.OrderId}");
             session.Events.StartStream<Order>(command.OrderId, command);
-            // THIS COULD ALSO WORK, BUT WHY WOULD APPEND TO A NON EXISTANT STREAM
-            // WORK?
-            //session.Events.Append(command.OrderId, command);
         }
 
         [Transactional]
@@ -82,6 +85,11 @@ namespace EndToEnd
 
     public class Tests
     {
+        private ITestOutputHelper _output;
+        public Tests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
         [Fact]
         public async void Test1()
         {
@@ -116,13 +124,16 @@ namespace EndToEnd
             await store.Advanced.Clean.DeleteAllDocumentsAsync();
             await store.Advanced.Clean.DeleteAllEventDataAsync();
 
-            var createOrder = new CreateOrderCommand();
+            var createOrder = new CreateOrderCommand(Guid.NewGuid(), _output);
+            _output.WriteLine($"Calling CREATE for {createOrder.OrderId}");
             await host.SendMessageAndWaitAsync(createOrder);
 
             var updateOrder = new UpdateOrderValue() { OrderId = createOrder.OrderId, NewValue = 2 };
+            _output.WriteLine($"Calling UPDATE for {updateOrder.OrderId}");
             await host.SendMessageAndWaitAsync(updateOrder);
 
             var query = new QueryOrder() { OrderId = createOrder.OrderId };
+            _output.WriteLine($"Calling QUERY for {query.OrderId}");
             var (session,order) = await host.InvokeMessageAndWaitAsync<Order>(query);
 
             Assert.NotNull(order);
