@@ -1,0 +1,30 @@
+ Iteration 171)   EndToEnd.Tests.Test1 
+   Duration: 2.8 sec
+
+   Message: 
+     System.AggregateException : One or more errors occurred. (Stream #eb6179e7-182d-4268-903c-82e26281e8e4 already exists in the database)
+     ---- Marten.Exceptions.ExistingStreamIdCollisionException : Stream #eb6179e7-182d-4268-903c-82e26281e8e4 already exists in the database
+
+   Stack Trace: 
+     TrackedSession.AssertNoExceptionsWereThrown() line 177
+     TrackedSession.ExecuteAndTrackAsync() line 303
+     WolverineHostMessageTrackingExtensions.ExecuteAndWaitValueTaskAsync(IHost host, Func`2 action, Int32 timeoutInMilliseconds) line 187
+     Tests.Test1() line 118
+     <>c.<ThrowAsync>b__128_0(Object state)
+     ----- Inner Stack Trace -----
+     ExceptionTransformExtensions.TransformAndThrow(IEnumerable`1 transforms, Exception ex)
+     AutoClosingLifetime.ExecuteBatchPagesAsync(IReadOnlyList`1 pages, List`1 exceptions, CancellationToken token)
+     AutoClosingLifetime.ExecuteBatchPagesAsync(IReadOnlyList`1 pages, List`1 exceptions, CancellationToken token)
+     AutoClosingLifetime.ExecuteBatchPagesAsync(IReadOnlyList`1 pages, List`1 exceptions, CancellationToken token)
+     <<ExecuteAsync>b__2_0>d.MoveNext()
+     --- End of stack trace from previous location ---
+     Outcome`1.GetResultOrRethrow()
+     ResiliencePipeline.ExecuteAsync[TState](Func`3 callback, TState state, CancellationToken cancellationToken)
+     DocumentSessionBase.ExecuteBatchAsync(IUpdateBatch batch, CancellationToken token)
+     ExceptionTransformExtensions.TransformAndThrow(IEnumerable`1 transforms, Exception ex)
+     DocumentSessionBase.ExecuteBatchAsync(IUpdateBatch batch, CancellationToken token)
+     DocumentSessionBase.ExecuteBatchAsync(IUpdateBatch batch, CancellationToken token)
+     DocumentSessionBase.SaveChangesAsync(CancellationToken token)
+     UpdateOrderValueHandler273026267.HandleAsync(MessageContext context, CancellationToken cancellation)
+     UpdateOrderValueHandler273026267.HandleAsync(MessageContext context, CancellationToken cancellation)
+     Executor.ExecuteAsync(MessageContext context, CancellationToken cancellation) line 164
