@@ -1,4 +1,4 @@
-This test is 'flaky' when run over and over again in sequence.  I've had it fail once after 180 sequencial succesful runs, and I'm trying to figure out what I may have misconfigured or be doing wrong.
+This test is 'flaky' when run over and over again in sequence.  I've had it fail once after 180 sequencial succesful runs, and I'm trying to figure out what I may have misconfigured or be doing wrong.  It feels like I've introduced some sort of eventual consistency.
 
 I'd love to be able to debug and catch the issue, but it is rare enough that I have not been able to catch it.  My best hope to catch it is to run the test in a loop over and over again until failure.  
 
