@@ -95,10 +95,6 @@ namespace EndToEnd
         {
             //Configure my Host
             //Get the Store and clean it
-            var ServiceProvider = host.Services;
-            var store = ServiceProvider.GetRequiredService<IDocumentStore>();
-            await store.Advanced.Clean.DeleteAllDocumentsAsync();
-            await store.Advanced.Clean.DeleteAllEventDataAsync();
 
             var createOrder = new CreateOrderCommand(Guid.NewGuid(), _output);
             _output.WriteLine($"Iteration {iteration}");

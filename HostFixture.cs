@@ -5,6 +5,7 @@ using Weasel.Core;
 using Wolverine;
 using Wolverine.Marten;
 using Xunit.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace EndToEnd
 {
@@ -41,6 +42,15 @@ namespace EndToEnd
         {
             await host.StartAsync();
             System.Diagnostics.Debug.WriteLine("Host started");
+
+            //I moved this out of the individual runs so I can examine the database afterward
+            // and observe if the projections are correct for my assertion failures,
+            // or events are processed when I get collisions
+            var ServiceProvider = host.Services;
+            var store = ServiceProvider.GetRequiredService<IDocumentStore>();
+            await store.Advanced.Clean.DeleteAllDocumentsAsync();
+            await store.Advanced.Clean.DeleteAllEventDataAsync();
+            System.Diagnostics.Debug.WriteLine("Data Cleaned");
         }
         public Task DisposeAsync() => Task.CompletedTask;
 
