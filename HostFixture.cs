@@ -24,7 +24,9 @@ namespace EndToEnd
                         options.Projections.Add<OrderProjection>(Marten.Events.Projections.ProjectionLifecycle.Inline);
                         options.DisableNpgsqlLogging = true;
                         options.UseSystemTextJsonForSerialization();
-                    }).IntegrateWithWolverine();
+                    })
+                    .UseLightweightSessions()
+                    .IntegrateWithWolverine();
                 })
                 .UseWolverine((options) =>
                 {
