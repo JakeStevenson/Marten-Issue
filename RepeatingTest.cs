@@ -9,6 +9,17 @@ using Xunit.Abstractions;
 
 namespace EndToEnd
 {
+    //STUFF TO PLAY WITH
+    public static class TestConstants
+    {
+        //Increasing this value seems to reduce the number of time I get stream collisions,
+        // but I do still occasionally get query results that do not reflect the final 
+        // state of the stream
+        public const int DelayInMilliseconds = 0;
+
+        public const int NumberOfTimesToRun = 50;
+    }
+
     //Simple Domain Object
     public record Order
     {
@@ -59,22 +70,25 @@ namespace EndToEnd
     public static class OrderCommandHandlers
     {
         [Transactional]
-        public static void Handle(CreateOrderCommand command, IDocumentSession session, ILogger logger)
+        public static async Task Handle(CreateOrderCommand command, IDocumentSession session, ILogger logger)
         {
             logger.Log(LogLevel.Information, $"Creating for {command.OrderId}");
             session.Events.StartStream<Order>(command.OrderId, command);
+            await Task.Delay(TestConstants.DelayInMilliseconds);
         }
 
         [Transactional]
-        public static void Handle(UpdateOrderValue command, IDocumentSession session)
+        public static async Task Handle(UpdateOrderValue command, IDocumentSession session)
         {
             session.Events.Append(command.OrderId, command);
+            await Task.Delay(TestConstants.DelayInMilliseconds);
         }
 
         [Transactional]
-        public static Order? Handle(QueryOrder query, IDocumentSession session)
+        public static async Task<Order?> Handle(QueryOrder query, IDocumentSession session)
         {
-            var order = session.Load<Order>(query.OrderId);
+            await Task.Delay(TestConstants.DelayInMilliseconds);
+            var order = await session.LoadAsync<Order>(query.OrderId);
             return order;
         }
     }
@@ -90,7 +104,7 @@ namespace EndToEnd
             host = fixture.host;
         }
         [Theory]
-        [Repeat(500)]
+        [Repeat(TestConstants.NumberOfTimesToRun)]
         public async void WithFixtureTest(int iteration)
         {
             //Configure my Host
