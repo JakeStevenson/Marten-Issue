@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace EndToEnd
 {
-    public class HostFixture
+    public class HostFixture : IAsyncLifetime
     {
         public IHost host;
         public HostFixture()
@@ -36,8 +36,13 @@ namespace EndToEnd
                     options.StubAllExternalTransports();
                 })
                 .Build();
-            host.Start();
+        }
+        public async Task InitializeAsync()
+        {
+            await host.StartAsync();
             System.Diagnostics.Debug.WriteLine("Host started");
         }
+        public Task DisposeAsync() => Task.CompletedTask;
+
     }
 }
