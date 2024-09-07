@@ -72,9 +72,9 @@ namespace EndToEnd
         }
 
         [Transactional]
-        public static async Task<Order?> Handle(QueryOrder query, IDocumentSession session)
+        public static Order? Handle(QueryOrder query, IDocumentSession session)
         {
-            var order = await session.LoadAsync<Order>(query.OrderId);
+            var order = session.Load<Order>(query.OrderId);
             return order;
         }
     }
