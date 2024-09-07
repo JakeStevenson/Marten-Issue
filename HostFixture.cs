@@ -1,9 +1,13 @@
-﻿using Marten;
+﻿using JasperFx.Core;
+using Marten;
 using Marten.Events;
+using Marten.Exceptions;
 using Microsoft.Extensions.Hosting;
 using Weasel.Core;
+using Oakton;
 using Wolverine;
 using Wolverine.Marten;
+using Wolverine.ErrorHandling;
 using Xunit.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,7 +23,7 @@ namespace EndToEnd
                 {
                     services.AddMarten(options =>
                     {
-                        options.Connection("Host=LOCALHOST;Port=5432;Database=TESTDATA;Username=postgres;Password=mypassword");
+                        options.Connection("Host=LOCALHOST;Port=5432;Database=TESTDATA;Username=postgres;Password=mypassword;Include Error Detail=True");
                         options.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                         options.Events.StreamIdentity = StreamIdentity.AsGuid;
                         options.Projections.Add<OrderProjection>(Marten.Events.Projections.ProjectionLifecycle.Inline);
@@ -35,7 +39,13 @@ namespace EndToEnd
                     options.Durability.Mode = DurabilityMode.Solo;
                     options.AutoBuildMessageStorageOnStartup = true;
                     options.StubAllExternalTransports();
+                    //I'm not seeing this make a difference.
+                    options.OnException<ExistingStreamIdCollisionException>()
+                        .RetryOnce()
+                        .Then.RetryWithCooldown(100.Milliseconds(), 250.Milliseconds(), 1000.Milliseconds(), 5000.Seconds())
+                        .Then.Discard();
                 })
+                .ApplyOaktonExtensions()
                 .Build();
         }
         public async Task InitializeAsync()
