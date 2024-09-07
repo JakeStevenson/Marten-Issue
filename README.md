@@ -1,3 +1,8 @@
+NOTE:  
+I've heavily modified the test by applying a fixture that only instantiates the host once, and a repeatattribute so xunit can handle rerunning the test multiple times.  I've added the output from one run with it repeating 500 times in `testoutput.txt`
+
+
+OLD NOTES:
 This test is 'flaky' when run over and over again in sequence.  I've had it fail once after 180 sequencial succesful runs, and I'm trying to figure out what I may have misconfigured or be doing wrong.  It feels like I've introduced some sort of eventual consistency.
 
 I'd love to be able to debug and catch the issue, but it is rare enough that I have not been able to catch it.  My best hope to catch it is to run the test in a loop over and over again until failure.  
