@@ -17,7 +17,7 @@ namespace EndToEnd
         // state of the stream
         public const int DelayInMilliseconds = 0;
 
-        public const int NumberOfTimesToRun = 50;
+        public const int NumberOfTimesToRun = 500;
     }
 
     //Simple Domain Object
@@ -73,7 +73,9 @@ namespace EndToEnd
         public static async Task Handle(CreateOrderCommand command, IDocumentSession session, ILogger logger)
         {
             logger.Log(LogLevel.Information, $"Creating for {command.OrderId}");
-            session.Events.StartStream<Order>(command.OrderId, command);
+            // Interestingly, Events.Append and Events.StartStream seem to do the same thing??
+            //session.Events.StartStream<Order>(command.OrderId, command);
+            session.Events.Append(command.OrderId, command);
             await Task.Delay(TestConstants.DelayInMilliseconds);
         }
 

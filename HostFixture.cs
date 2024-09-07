@@ -39,6 +39,12 @@ namespace EndToEnd
                     options.Durability.Mode = DurabilityMode.Solo;
                     options.AutoBuildMessageStorageOnStartup = true;
                     options.StubAllExternalTransports();
+                    //These force all my message kinds into the same queue, and that we only process
+                    // those in order.
+                    options.PublishMessage<CreateOrderCommand>().ToLocalQueue("order-queue");
+                    options.PublishMessage<UpdateOrderValue>().ToLocalQueue("order-queue");
+                    options.PublishMessage<QueryOrder>().ToLocalQueue("order-queue");
+                    options.LocalQueue("order-queue").MaximumParallelMessages(1).Sequential();
                     //I'm not seeing this make a difference.
                     options.OnException<ExistingStreamIdCollisionException>()
                         .RetryOnce()
