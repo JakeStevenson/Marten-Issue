@@ -1,13 +1,9 @@
 using Marten;
-using Marten.Events;
 using Marten.Events.Aggregation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Weasel.Core;
-using Wolverine;
 using Wolverine.Attributes;
 using Wolverine.Tracking;
-using Wolverine.Marten;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
@@ -83,41 +79,21 @@ namespace EndToEnd
         }
     }
 
-    public class Tests
+    [Collection("With Fixture")]
+    public class WithFixtureTests : IClassFixture<HostFixture>
     {
         private ITestOutputHelper _output;
-        public Tests(ITestOutputHelper output)
+        private IHost host;
+        public WithFixtureTests(HostFixture fixture, ITestOutputHelper output)
         {
             _output = output;
+            host = fixture.host;
         }
-        [Fact]
-        public async void Test1()
+        [Theory]
+        [Repeat(500)]
+        public async void WithFixtureTest(int iteration)
         {
             //Configure my Host
-            var host = Host.CreateDefaultBuilder()
-                .ConfigureServices((context, services) =>
-                {
-                    services.AddMarten(options =>
-                    {
-                        options.Connection("Host=LOCALHOST;Port=5432;Database=TESTDATA;Username=postgres;Password=mypassword");
-                        options.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-                        options.Events.StreamIdentity = StreamIdentity.AsGuid;
-                        options.Projections.Add<OrderProjection>(Marten.Events.Projections.ProjectionLifecycle.Inline);
-                        options.DisableNpgsqlLogging = true;
-                        options.UseSystemTextJsonForSerialization();
-                    }).IntegrateWithWolverine();
-                })
-                .UseWolverine((options) =>
-                {
-                    options.UseSystemTextJsonForSerialization();
-                    options.Durability.Mode = DurabilityMode.Solo;
-                    options.Discovery.IncludeAssembly(typeof(Tests).Assembly);
-                    options.AutoBuildMessageStorageOnStartup = true;
-                    options.StubAllExternalTransports();
-                })
-                .Build();
-            host.Start();
-
             //Get the Store and clean it
             var ServiceProvider = host.Services;
             var store = ServiceProvider.GetRequiredService<IDocumentStore>();
@@ -125,6 +101,7 @@ namespace EndToEnd
             await store.Advanced.Clean.DeleteAllEventDataAsync();
 
             var createOrder = new CreateOrderCommand(Guid.NewGuid(), _output);
+            _output.WriteLine($"Iteration {iteration}");
             _output.WriteLine($"Calling CREATE for {createOrder.OrderId}");
             await host.SendMessageAndWaitAsync(createOrder);
 
@@ -134,7 +111,7 @@ namespace EndToEnd
 
             var query = new QueryOrder() { OrderId = createOrder.OrderId };
             _output.WriteLine($"Calling QUERY for {query.OrderId}");
-            var (session,order) = await host.InvokeMessageAndWaitAsync<Order>(query);
+            var (session, order) = await host.InvokeMessageAndWaitAsync<Order>(query);
 
             Assert.NotNull(order);
             Assert.Equal(2, order.Value);
