@@ -1,5 +1,5 @@
 NOTE:
-My latest update solves the issue with streams being created twice.  I discovered Events.Append CAN create a stream just like Events.StartStream<>.  I've forced all messages to a single local queue, and that queue to process sequentially.  
+My latest update solves the issue with streams being created twice.  I discovered Events.Append CAN create a stream just like Events.StartStream<>, so if both Create and Update were being run on different threads, they could try to create the same stream.  I've forced all messages to a single local queue, and that queue to process sequentially.  
 
 I am still getting random errors on query though.  For example:
 ```
