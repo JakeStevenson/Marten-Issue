@@ -1,8 +1,32 @@
-NOTE:  
+NOTE:
+My latest update solves the issue with streams being created twice.  I discovered Events.Append CAN create a stream just like Events.StartStream<>.  I've forced all messages to a single local queue, and that queue to process sequentially.  
+
+I am still getting random errors on query though.  For example:
+```
+  Failed EndToEnd.WithFixtureTests.WithFixtureTest(iteration: 315) [5 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 2
+Actual:   0
+  Stack Trace:
+     at EndToEnd.WithFixtureTests.WithFixtureTest(Int32 iteration) in /Users/jakes/Projects/My-Flaky-Marten-Test/RepeatingTest.cs:line 128
+   at System.Threading.Tasks.Task.<>c.<ThrowAsync>b__128_0(Object state)
+  Standard Output Messages:
+ Created order command 44fca782-b831-4b0c-bdde-577fe3b85c45
+ Iteration 315
+ Calling CREATE for 44fca782-b831-4b0c-bdde-577fe3b85c45
+ Calling UPDATE for 44fca782-b831-4b0c-bdde-577fe3b85c45
+ Calling QUERY for 44fca782-b831-4b0c-bdde-577fe3b85c45
+```
+
+This seems to indicate the UPDATE command did not complete before the QUERY was run, or the projection was not complete despite being registered as Inline.  I'll have to keep looking for that issue.
+
+
+PREVIOUS NOTE:  
 I've heavily modified the test by applying a fixture that only instantiates the host once, and a repeatattribute so xunit can handle rerunning the test multiple times.  I've added the output from one run with it repeating 500 times in `testoutput.txt`
 
 
-OLD NOTES:
+PREVIOUS NOTE:
 This test is 'flaky' when run over and over again in sequence.  I've had it fail once after 180 sequencial succesful runs, and I'm trying to figure out what I may have misconfigured or be doing wrong.  It feels like I've introduced some sort of eventual consistency.
 
 I'd love to be able to debug and catch the issue, but it is rare enough that I have not been able to catch it.  My best hope to catch it is to run the test in a loop over and over again until failure.  
