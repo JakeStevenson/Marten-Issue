@@ -12,12 +12,7 @@ namespace EndToEnd
     //STUFF TO PLAY WITH
     public static class TestConstants
     {
-        //Increasing this value seems to reduce the number of time I get stream collisions,
-        // but I do still occasionally get query results that do not reflect the final 
-        // state of the stream
-        public const int DelayInMilliseconds = 0;
-
-        public const int NumberOfTimesToRun = 500;
+        public const int NumberOfTimesToRun = 1000;
     }
 
     //Simple Domain Object
@@ -47,9 +42,8 @@ namespace EndToEnd
     //Commands and Queries
     public record CreateOrderCommand
     {
-        public CreateOrderCommand(Guid orderId, ITestOutputHelper logger)
+        public CreateOrderCommand(Guid orderId)
         {
-            logger.WriteLine($"Created order command {orderId}");
             OrderId = orderId;
         }
         public Guid OrderId { get; init; }
@@ -73,23 +67,31 @@ namespace EndToEnd
         public static async Task Handle(CreateOrderCommand command, IDocumentSession session, ILogger logger)
         {
             logger.Log(LogLevel.Information, $"Creating for {command.OrderId}");
-            // Interestingly, Events.Append and Events.StartStream seem to do the same thing??
+            // Interestingly, Events.Append and Events.StartStream seem to do the same thing!
             //session.Events.StartStream<Order>(command.OrderId, command);
             session.Events.Append(command.OrderId, command);
-            await Task.Delay(TestConstants.DelayInMilliseconds);
         }
 
         [Transactional]
         public static async Task Handle(UpdateOrderValue command, IDocumentSession session)
         {
             session.Events.Append(command.OrderId, command);
-            await Task.Delay(TestConstants.DelayInMilliseconds);
         }
 
         [Transactional]
         public static async Task<Order?> Handle(QueryOrder query, IDocumentSession session)
         {
-            await Task.Delay(TestConstants.DelayInMilliseconds);
+            var streamState = await session.Events.FetchStreamStateAsync(query.OrderId);
+
+            // Check if the stream has the expected version before querying
+            var expectedVersion = 2; // My test executes 2 events before querying
+            if (streamState.Version < expectedVersion)
+            {
+                //If we don't have all our events yet, let's wait a moment
+                await Task.Delay(100);
+            }
+
+            //await Task.Delay(TestConstants.DelayInMilliseconds);
             var order = await session.LoadAsync<Order>(query.OrderId);
             return order;
         }
@@ -112,7 +114,7 @@ namespace EndToEnd
             //Configure my Host
             //Get the Store and clean it
 
-            var createOrder = new CreateOrderCommand(Guid.NewGuid(), _output);
+            var createOrder = new CreateOrderCommand(Guid.NewGuid());
             _output.WriteLine($"Iteration {iteration}");
             _output.WriteLine($"Calling CREATE for {createOrder.OrderId}");
             await host.SendMessageAndWaitAsync(createOrder);
